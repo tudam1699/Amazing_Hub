@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amazing Hub - Admin Panel</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #eef2f5; }
+    .box { max-width: 400px; margin: 40px auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    input, button, textarea { width: 100%; padding: 10px; margin-top: 10px; box-sizing: border-box; }
+    button { background: #003366; color: white; border: none; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="box" id="login-box">
+    <h2>Admin Login</h2>
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <p id="msg" style="color:red;"></p>
+  </div>
+
+  <div class="box" id="admin-box" style="display:none;">
+    <h2>Add New Service</h2>
+    <input type="text" id="stitle" placeholder="Service Title (e.g. Compressor Repair)">
+    <textarea id="sdesc" placeholder="Description"></textarea>
+    <input type="text" id="sprice" placeholder="Price">
+    <button onclick="addService()">Add Service</button>
+    <p id="smsg" style="color:green;"></p>
+  </div>
+
+  <script>
+    async function login() {
+      const u = document.getElementById('username').value;
+      const p = document.getElementById('password').value;
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: u, password: p })
+      });
+      const data = await res.json();
+      if (data.success) {
+        localStorage.setItem('token', data.token);
+        document.getElementById('login-box').style.display = 'none';
+        document.getElementById('admin-box').style.display = 'block';
+      } else {
+        document.getElementById('msg').innerText = 'Invalid Credentials';
+      }
+    }
+
+    async function addService() {
+      const token = localStorage.getItem('token');
+      const service = {
+        title: document.getElementById('stitle').value,
+        description: document.getElementById('sdesc').value,
+        price: document.getElementById('sprice').value
+      };
+      const res = await fetch('/api/services', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify(service)
+      });
+      if (res.ok) {
+        document.getElementById('smsg').innerText = 'Service Added Successfully!';
+      }
+    }
+  </script>
+</body>
+</html>
