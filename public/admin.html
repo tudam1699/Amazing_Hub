@@ -5,68 +5,154 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Amazing Hub - Admin Panel</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background: #eef2f5; }
-    .box { max-width: 400px; margin: 40px auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    input, button, textarea { width: 100%; padding: 10px; margin-top: 10px; box-sizing: border-box; }
-    button { background: #003366; color: white; border: none; cursor: pointer; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
+    body { background-color: #eef2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+    .card { background: white; width: 100%; max-width: 450px; padding: 30px; border-radius: 10px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+    h2 { color: #0d3b66; text-align: center; margin-bottom: 20px; font-size: 22px; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; font-size: 14px; color: #555; margin-bottom: 5px; font-weight: 600; }
+    input, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; outline: none; }
+    input:focus, textarea:focus { border-color: #0d3b66; }
+    textarea { resize: vertical; height: 90px; }
+    button { width: 100%; padding: 12px; background-color: #0d3b66; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
+    button:hover { background-color: #082d50; }
+    .error-msg { color: #e63946; font-size: 13px; text-align: center; margin-top: 10px; display: none; }
+    .success-msg { color: #2a9d8f; font-size: 13px; text-align: center; margin-top: 10px; display: none; }
+    .hidden { display: none; }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .view-site { color: #00b4d8; text-decoration: none; font-size: 13px; font-weight: bold; }
   </style>
 </head>
 <body>
-  <div class="box" id="login-box">
-    <h2>Admin Login</h2>
-    <input type="text" id="username" placeholder="Username">
-    <input type="password" id="password" placeholder="Password">
-    <button onclick="login()">Login</button>
-    <p id="msg" style="color:red;"></p>
-  </div>
 
-  <div class="box" id="admin-box" style="display:none;">
-    <h2>Add New Service</h2>
-    <input type="text" id="stitle" placeholder="Service Title (e.g. Compressor Repair)">
-    <textarea id="sdesc" placeholder="Description"></textarea>
-    <input type="text" id="sprice" placeholder="Price">
-    <button onclick="addService()">Add Service</button>
-    <p id="smsg" style="color:green;"></p>
+  <div class="card">
+    <!-- LOGIN FORM -->
+    <div id="loginSection">
+      <h2>Admin Login</h2>
+      <form id="loginForm">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="loginUsername" placeholder="Enter username" required>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="loginPassword" placeholder="Enter password" required>
+        </div>
+        <button type="submit" id="loginBtn">Login</button>
+        <div id="loginError" class="error-msg"></div>
+      </form>
+    </div>
+
+    <!-- ADD SERVICE FORM -->
+    <div id="serviceSection" class="hidden">
+      <div class="top-bar">
+        <a href="/" class="view-site">← Back to Main Site</a>
+        <button onclick="logout()" style="width: auto; padding: 5px 12px; font-size: 12px; background: #e63946;">Logout</button>
+      </div>
+      <h2>Add New Service</h2>
+      <form id="serviceForm">
+        <div class="form-group">
+          <label>Service Title</label>
+          <input type="text" id="serviceTitle" placeholder="e.g. Car AC Compressor Repairing" required>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="serviceDesc" placeholder="e.g. Complete gas refilling, leak testing, and compressor overhauling." required></textarea>
+        </div>
+        <div class="form-group">
+          <label>Price (PKR)</label>
+          <input type="text" id="servicePrice" placeholder="e.g. 5000" required>
+        </div>
+        <button type="submit" id="addBtn">Add Service</button>
+        <div id="serviceSuccess" class="success-msg"></div>
+        <div id="serviceError" class="error-msg"></div>
+      </form>
+    </div>
   </div>
 
   <script>
-    async function login() {
-      const u = document.getElementById('username').value;
-      const p = document.getElementById('password').value;
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: u, password: p })
-      });
-      const data = await res.json();
-      if (data.success) {
-        localStorage.setItem('token', data.token);
-        document.getElementById('login-box').style.display = 'none';
-        document.getElementById('admin-box').style.display = 'block';
-      } else {
-        document.getElementById('msg').innerText = 'Invalid Credentials';
-      }
+    if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
+      showServiceSection();
     }
 
-    async function addService() {
-      const token = localStorage.getItem('token');
-      const service = {
-        title: document.getElementById('stitle').value,
-        description: document.getElementById('sdesc').value,
-        price: document.getElementById('sprice').value
-      };
-      const res = await fetch('/api/services', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + token
-        },
-        body: JSON.stringify(service)
-      });
-      if (res.ok) {
-        document.getElementById('smsg').innerText = 'Service Added Successfully!';
-      }
+    function showServiceSection() {
+      document.getElementById('loginSection').classList.add('hidden');
+      document.getElementById('serviceSection').classList.remove('hidden');
     }
+
+    function logout() {
+      sessionStorage.removeItem('isAdminLoggedIn');
+      location.reload();
+    }
+
+    // Login Handler
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const loginError = document.getElementById('loginError');
+      loginError.style.display = 'none';
+
+      const username = document.getElementById('loginUsername').value;
+      const password = document.getElementById('loginPassword').value;
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          sessionStorage.setItem('isAdminLoggedIn', 'true');
+          showServiceSection();
+        } else {
+          loginError.innerText = data.message || 'Invalid Credentials';
+          loginError.style.display = 'block';
+        }
+      } catch (err) {
+        loginError.innerText = 'Server error. Please try again.';
+        loginError.style.display = 'block';
+      }
+    });
+
+    // Add Service Handler
+    document.getElementById('serviceForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const successMsg = document.getElementById('serviceSuccess');
+      const errorMsg = document.getElementById('serviceError');
+      const addBtn = document.getElementById('addBtn');
+
+      successMsg.style.display = 'none';
+      errorMsg.style.display = 'none';
+      addBtn.innerText = 'Adding...';
+
+      const title = document.getElementById('serviceTitle').value;
+      const description = document.getElementById('serviceDesc').value;
+      const price = document.getElementById('servicePrice').value;
+
+      try {
+        const res = await fetch('/api/services', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, description, price })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          successMsg.innerText = 'Service Added Successfully!';
+          successMsg.style.display = 'block';
+          document.getElementById('serviceForm').reset();
+        } else {
+          errorMsg.innerText = data.message || 'Failed to add service';
+          errorMsg.style.display = 'block';
+        }
+      } catch (err) {
+        errorMsg.innerText = 'Server error while adding service.';
+        errorMsg.style.display = 'block';
+      } finally {
+        addBtn.innerText = 'Add Service';
+      }
+    });
   </script>
 </body>
 </html>
