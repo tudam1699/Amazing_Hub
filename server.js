@@ -19,7 +19,19 @@ if (MONGODB_URI) {
     .catch(err => console.error('MongoDB Connection Error:', err));
 }
 
-// Login Route
+// Service Schema & Model
+const serviceSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  description: { type: String, required: true },
+  price: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const Service = mongoose.models.Service || mongoose.model('Service', serviceSchema);
+
+// API Routes
+
+// 1. Admin Login API
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body || {};
   
@@ -27,7 +39,6 @@ app.post('/api/login', (req, res) => {
     return res.status(400).json({ success: false, message: 'Username and password required' });
   }
 
-  // Direct login credentials check
   if (username.toLowerCase() === 'admin' && password === 'admin123') {
     return res.json({ success: true, message: 'Logged in successfully' });
   }
@@ -35,10 +46,42 @@ app.post('/api/login', (req, res) => {
   return res.status(400).json({ success: false, message: 'Invalid Credentials' });
 });
 
-// Serve Frontend Files
+// 2. Add New Service API (MongoDB Mein Save Karega)
+app.post('/api/services', async (req, res) => {
+  try {
+    const { title, description, price } = req.body;
+    if (!title || !description || !price) {
+      return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
+
+    const newService = new Service({ title, description, price });
+    await newService.save();
+    return res.json({ success: true, message: 'Service added successfully!' });
+  } catch (err) {
+    console.error('Error adding service:', err);
+    return res.status(500).json({ success: false, message: 'Server error while saving service' });
+  }
+});
+
+// 3. Get All Services API (MongoDB Se Fetch Karega)
+app.get('/api/services', async (req, res) => {
+  try {
+    const services = await Service.find().sort({ createdAt: -1 });
+    return res.json(services);
+  } catch (err) {
+    console.error('Error fetching services:', err);
+    return res.status(500).json({ success: false, message: 'Error fetching services' });
+  }
+});
+
+// Route for Admin Page
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// Fallback Route for Main Website
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Export app for Vercel
 module.exports = app;
