@@ -43,3 +43,13 @@ if (process.env.NODE_ENV !== 'production') {
     console.log(`Server running on port ${PORT}`);
   });
 }
+app.post('/api/login', async (req, res) => {
+  const { username, password } = req.body;
+  
+  // Simple check for testing or database comparison
+  if (username === 'admin' && password === 'admin123') {
+    return res.json({ success: true, message: 'Logged in successfully' });
+  }
+  
+  return res.status(400).json({ success: false, message: 'Invalid credentials' });
+});
